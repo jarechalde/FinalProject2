@@ -1,0 +1,27 @@
+[1] "/home/javier/Work/FinalProject"
+Confusion Matrix and Statistics
+
+          Reference
+Prediction   0   1
+         0 980 214
+         1 158  64
+                                          
+               Accuracy : 0.7373          
+                 95% CI : (0.7135, 0.7601)
+    No Information Rate : 0.8037          
+    P-Value [Acc > NIR] : 1.00000         
+                                          
+                  Kappa : 0.0989          
+ Mcnemar's Test P-Value : 0.00435         
+                                          
+            Sensitivity : 0.8612          
+            Specificity : 0.2302          
+         Pos Pred Value : 0.8208          
+         Neg Pred Value : 0.2883          
+             Prevalence : 0.8037          
+         Detection Rate : 0.6921          
+   Detection Prevalence : 0.8432          
+      Balanced Accuracy : 0.5457          
+                                          
+       'Positive' Class : 0               
+                                          

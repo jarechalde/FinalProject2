@@ -1,0 +1,165 @@
+---
+title: "Classification"
+author: "Javier Arechalde"
+date: "February 27, 2018"
+output: pdf_document
+---
+
+#Initialization
+
+First we will load the lobraries that we will use for the classification tasks, and then we will set the working directory for this project and load the data.
+
+```{r}
+#Loading libraries
+library(party)
+library(caret)
+library(e1071)
+library(ROSE)
+library(randomForest)
+library(fastAdaboost)
+
+#Setting the working directory
+setwd("/home/javier/Work/FinalProject")
+getwd()
+
+#We read the data
+cleandata = read.csv("DataClean.csv", header = TRUE, sep = ";")
+enrichdata = read.csv('DataFeatures.csv', header = TRUE, sep = ",")
+```
+
+Now we will partition the data into training and test set, in this case 60% training, 40% testing.
+
+```{r}
+partition<-sample(2,nrow(enrichdata),replace = T,prob=c(0.7,0.3))
+train<-enrichdata[partition==1,]
+test<-enrichdata[partition==2,]
+```
+
+Now we will handle class imbalance, to see if we can improve our classification performance.
+
+```{r}
+bal_train<-ovun.sample(Completion~.,data = train, method = 'both', N = 30000, seed = 773)$data
+
+#We check if we correctly balanced the data
+table(bal_train$Completion)
+```
+
+#Tree
+
+```{r}
+tree<-ctree(Completion~Gender+hsgpa+Total_SAT+Location+Changed_Major+D_Adm+Above_GPA,data = bal_train, controls = ctree_control(mincriterion = 0.99, minsplit = 500))
+tree
+plot(tree)
+```
+
+Lets check some results
+
+```{r}
+testpr<-predict(tree,test)
+testpr<-ifelse(testpr>=0.5,1,0)
+confusionMatrix(testpr,test$Completion)
+```
+
+#Random Forest
+
+```{r}
+rf<-randomForest(Completion~Admit_Term+Admitted_Semester+Gender+schoolstate+hsgpa+SATMA+SATVB+ACAD_GROUP_A+Location+Honors+D_Adm+Changed_Major+Total_SAT+Above_GPA+ACAD_GROUP_C+School_rank, data = na.exclude(train), ntree = 300, importance = T)
+print(rf)
+plot(rf, main ='OOB error vs. number of trees')
+
+#Normalization and SVM
+
+#ADABOOST
+```
+
+
+# Results of the random forest
+
+```{r}
+predrforest<-predict(rf,test)
+
+mynames<-names(predrforest)
+
+true_pos<-0
+true_neg<-0
+false_pos<-0
+false_neg<-0
+
+predrf<-c()
+
+for (i in 1:length(mynames)){
+  index<-mynames[i]
+  predvalue<-predrforest[index]
+  if (predvalue>=0.5){
+    predvalue = 1
+    predrf<-c(predrf,predvalue)
+  }
+  
+  else{
+    predvalue = 0
+    predrf<-c(predrf,predvalue)
+  }
+  
+}
+
+cmrf<-confusionMatrix(predrf,test$Completion)
+print(cmrf)
+```
+
+#SVM
+
+```{r}
+mysvm<-svm(Completion~Admit_Term+Gender+schoolname+Schoolcity+Schoolcounty+schoolstate+hsgpa+SATMA+SATVB+ACAD_GROUP_A+Above_GPA+Honors+Location+D_Adm+Changed_Major+Total_SAT+School_GPA+School_rank+Above_HSGPA, data = na.exclude(train), kernel ='sigmoid')
+
+summary(mysvm)
+```
+
+#SVM Results
+
+```{r}
+predsvm<-predict(mysvm,test, na.action = na.omit)
+
+mynames<-names(predsvm)
+
+pred<-c()
+
+for (i in 1:length(mynames)){
+  index<-mynames[i]
+  predvalue<-predsvm[index]
+  if (predvalue>=0.5){
+    predvalue = 1
+    pred<-c(pred,predvalue)
+  }
+  
+  else{
+    predvalue = 0
+    pred<-c(pred,predvalue)
+  }
+  
+}
+
+testnNA<-na.exclude(test)
+
+cmsvm<-confusionMatrix(pred,testnNA$Completion)
+print(cmsvm)
+```
+
+#ADABOOST
+
+```{r}
+<<<<<<< HEAD
+myada<-adaboost(Completion~nivGender+Admit_Term+schoolname+Schoolcity+Location+Admitted_Major+Changed_Major+School_GPA+School_rank+Above_GPA+D_Adm+schoolstate, data = train,10)
+=======
+myada<-adaboost(Completion~Gender+Admit_Term+schoolname+Schoolcity+Location+Admitted_Major+Changed_Major+School_GPA+School_rank+Above_GPA+D_Adm+schoolstate, data = train,10)
+>>>>>>> 01efeb49f4debac3247bedbcf37c496888bc0656
+```
+
+#ADABOOST RESULTS
+
+```{r}
+predada<-predict(myada,test)
+
+cmada<-confusionMatrix(predada$class,test$Completion)
+print(cmada)
+
+```
